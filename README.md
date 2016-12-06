@@ -12,7 +12,7 @@ A parallel classification method using mapreduce for large imbalanced datasets.
 **OS**: Linux Mint 18 cinamon 64-bit
 
 # Data preparation
-Small [dataset](datasets/winequality-white.csv) for test purposes was obtained from [UCI Machine Learning Repository](https://archive.ics.uci.edu/ml/datasets.html)
+Small [dataset](datasets/winequality-white.csv) for test purposes was obtained from [UCI Machine Learning Repository](https://archive.ics.uci.edu/ml/datasets.html).<br>
 Replacements of semicolons with commas were necessary in order to import the dataset into mongo data base.
 ```sh
 $ mongoimport --db wine_white --collection quality --type csv --headerline --file datasets/winequality-white.csv
