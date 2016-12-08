@@ -9,15 +9,15 @@ A script for parallel classification of vast imbalanced datasets using split bal
 Small [dataset](datasets/winequality-white.csv) for test purposes was obtained from [UCI Machine Learning Repository](https://archive.ics.uci.edu/ml/datasets.html).<br>
 Replacements of semicolons with commas were necessary in order to import the dataset into mongo data base.<br>
 Dataset class summary:<br>
-| Quality  | Count |
-|----------|-------|
-| 3        | 20    |
-| 4        | 163   |
-| 5        | 1457  |
-| 6        | 2198  |
-| 7        | 880   |
-| 8        | 175   |
-| 9        | 5     |
+quality | count
+--- | ---
+3 | 20
+4 | 163
+5 | 1457
+6 | 2198
+7 | 880
+8 | 175
+9 | 5
 
 Import:
 ```sh
