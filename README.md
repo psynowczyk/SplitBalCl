@@ -9,16 +9,6 @@ A script for parallel classification of vast imbalanced datasets using split bal
 Small [dataset](datasets/winequality-white.csv) for test purposes was obtained from [UCI Machine Learning Repository](https://archive.ics.uci.edu/ml/datasets.html).<br>
 Replacements of semicolons with commas were necessary in order to import the dataset into mongo data base.<br>
 Dataset class summary:<br>
-| Reżyser                                       | Ilość produkcji |
-|-----------------------------------------------|-----------------|
-| alfred hitchcock                              | 136             |
-| garry marshall                                | 108             |
-| woody allen                                   | 105             |
-| chuck jones                                   | 98              |
-| errol morris                                  | 94              |
-| peter west                                    | 93              |
-| sydney pollack                                | 86              |
-![alt text](https://github.com/psynowczyk/tnosql2/blob/master/img2.png "")
 
 quality | count
 --- | ---
