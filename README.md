@@ -10,7 +10,7 @@ Small [dataset](datasets/winequality-white.csv) for test purposes was obtained f
 Replacements of semicolons with commas were necessary in order to import the dataset into mongo data base.<br>
 Dataset class summary:<br>
 
-quality | count
+quality (class) | size
 --- | ---
 3 | 20
 4 | 163
