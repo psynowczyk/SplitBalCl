@@ -6,42 +6,32 @@ A script for parallel classification of vast imbalanced datasets using split bal
 - [Split balancing](#split-balancing)
 
 # Data preparation
-Small [dataset](datasets/winequality-white.csv) for test purposes was obtained from [UCI Machine Learning Repository](https://archive.ics.uci.edu/ml/datasets.html).<br>
-Replacements of semicolons with commas were necessary in order to import the dataset into mongo data base.<br>
-Dataset class summary:<br>
+Small [dataset](datasets/yeast6.csv) for test purposes was obtained from [KEEL Data set repository](http://sci2s.ugr.es/keel/imbalanced.php).<br>
+Dataset summary:<br>
 
-quality (class) | size
---- | ---
-3 | 20
-4 | 163
-5 | 1457
-6 | 2198
-7 | 880
-8 | 175
-9 | 5
+name | Attributes | Examples | IR
+--- | --- | --- | ---
+yeast6 | 8 | 1484 | 41.4
 
 Import:
 ```sh
-$ mongoimport --db wine_white --collection quality --type csv --headerline --file datasets/winequality-white.csv
-imported 4898 documents
+$ mongoimport --db imbalanced --collection yeast6 --type csv --headerline --file datasets/yeast6.csv
+imported 1484 documents
 ```
 Sample:
 ```js
-> db.quality.findOne()
+> db.yeast6.findOne();
 {
-	"_id" : ObjectId("5846c767eee95f8d05f0b346"),
-	"fixed acidity" : 7,
-	"volatile acidity" : 0.27,
-	"citric acid" : 0.36,
-	"residual sugar" : 20.7,
-	"chlorides" : 0.045,
-	"free sulfur dioxide" : 45,
-	"total sulfur dioxide" : 170,
-	"density" : 1.001,
-	"pH" : 3,
-	"sulphates" : 0.45,
-	"alcohol" : 8.8,
-	"quality" : 6
+	"_id" : ObjectId("585154c04529cbc161146d0e"),
+	"Mcg" : 0.58,
+	"Gvh" : 0.61,
+	"Alm" : 0.47,
+	"Mit" : 0.13,
+	"Erl" : 0.5,
+	"Pox" : 0,
+	"Vac" : 0.48,
+	"Nuc" : 0.22,
+	"Class" : "negative"
 }
 ```
 
