@@ -9,7 +9,7 @@ A script for parallel classification of vast imbalanced datasets using split bal
 Small [dataset](datasets/yeast6.csv) for test purposes was obtained from [KEEL Data set repository](http://sci2s.ugr.es/keel/imbalanced.php).<br>
 Dataset summary:<br>
 
-name | Attributes | Examples | IR
+name | Attributes | Examples | Imbalanced Ratio
 --- | --- | --- | ---
 yeast6 | 8 | 1484 | 41.4
 
