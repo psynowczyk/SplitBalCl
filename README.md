@@ -53,10 +53,10 @@ $ Rscript generate_db.R imbalanced yeast6 Class
 ```
 
 **Arguments**<br>
-1. R script location
-2. name of database
-3. name of collection
-4. name of class
+1. R script location<br>
+2. name of database<br>
+3. name of collection<br>
+4. name of class<br>
 
 **Script**
 ```r
@@ -113,12 +113,12 @@ $ Rscript splitbal_binary.R imbalanced yeast6 Class 1 mongo
 ```
 
 **Arguments**<br>
-1. R script location
-2. name of database
-3. name of collection
-4. name of class
-5. bin number [1...x=C1/C2]
-6. output type
+1. R script location<br>
+2. name of database<br>
+3. name of collection<br>
+4. name of class<br>
+5. bin number [1...x=C1/C2]<br>
+6. output type<br>
   * mongo - inserts result data into database as new collection: collection_result_bin
   * file - writes result data into file: results/collection_result_bin
   * console - prints result data into console
