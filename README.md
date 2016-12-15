@@ -52,7 +52,7 @@ In order to measure classification accuracy a test and train subsets are require
 $ Rscript generate_db.R imbalanced yeast6 Class
 ```
 
-**Arguments**
+**Arguments**<br>
 1. R script location
 2. name of database
 3. name of collection
@@ -104,7 +104,7 @@ rm(conn)
 ```
 
 # Split balancing
-**Description**
+**Description**<br>
 A split balancing method implementation [R script](scripts/R/splitbal_binary.R).<br>
 
 **Usage**
@@ -112,7 +112,7 @@ A split balancing method implementation [R script](scripts/R/splitbal_binary.R).
 $ Rscript splitbal_binary.R imbalanced yeast6 Class 1 mongo
 ```
 
-**Arguments**
+**Arguments**<br>
 1. R script location
 2. name of database
 3. name of collection
