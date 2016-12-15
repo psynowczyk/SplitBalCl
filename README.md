@@ -2,23 +2,33 @@
 A script for parallel classification of vast imbalanced datasets using split balancing method.
 
 # Table of contents
+- [Environment](#environment)
 - [Data preparation](#data-preparation)
 - [Split balancing](#split-balancing)
 
+# Environment
+Requirements:
+* openssl and Cyrus SASL
+* MongoDB
+* R + packages: rJava, mongolite, C50
+
 # Data preparation
+### Dataset
 Small [dataset](datasets/yeast6.csv) for test purposes was obtained from [KEEL Data set repository](http://sci2s.ugr.es/keel/imbalanced.php).<br>
-Dataset summary:<br>
+
+**Dataset summary**
 
 name | Attributes | Examples | Imbalance Ratio
 --- | --- | --- | ---
 yeast6 | 8 | 1484 | 41.4
 
-Import:
+**Import**
 ```sh
 $ mongoimport --db imbalanced --collection yeast6 --type csv --headerline --file datasets/yeast6.csv
 imported 1484 documents
 ```
-Sample:
+
+**Sample**
 ```js
 > db.yeast6.findOne();
 {
@@ -34,12 +44,21 @@ Sample:
 	"Class" : "negative"
 }
 ```
-In order to measure classification accuracy a train and test datasets are required. Those datasets are generated from original dataset by splitting it into two subsets. Following [R script](scripts/R/generate_db.R) is employed to achieve this task.<br>
-Usage:
+### Test & Train subsets
+In order to measure classification accuracy a test and train subsets are required. Those subsets are generated from original dataset by splitting it into two subsets. Following [R script](scripts/R/generate_db.R) is employed to achieve this task.<br>
+
+**Usage**
 ```sh
-$ Rscript generate_db.R database collection class
+$ Rscript generate_db.R imbalanced yeast6 Class
 ```
-Script:
+
+**Arguments**
+1. R script location
+2. name of database
+3. name of collection
+4. name of class
+
+**Script**
 ```r
  # args -> [file, database, collection, class name]
  # ex. -> $ Rscript generate_db.R imbalanced yeast6 Class
@@ -85,31 +104,51 @@ rm(conn)
 ```
 
 # Split balancing
-A split balancing method implemented in [R script](scripts/R/splitbal_binary.R).<br>
-Usage:
+**Description**
+A split balancing method implementation [R script](scripts/R/splitbal_binary.R).<br>
+
+**Usage**
 ```sh
-$ Rscript splitbal.R database collection class bin
+$ Rscript splitbal_binary.R imbalanced yeast6 Class 1 mongo
 ```
-Script:
+
+**Arguments**
+1. R script location
+2. name of database
+3. name of collection
+4. name of class
+5. bin number [1...x=C1/C2]
+6. output type
+  * mongo - inserts result data into database as new collection: collection_result_bin
+  * file - writes result data into file: results/collection_result_bin
+  * console - prints result data into console
+
+**Script**
 ```r
- # args -> [file, database, train collection, test collection, class name, bin number]
- # ex. -> $ Rscript splitbal_binary.R imbalanced yeast6_train yeast6_test Class 1
+ # args -> [file, database, collection, class name, bin number (1...x=C1/C2), output (mongo, file, console)]
+ # ex. -> $ Rscript splitbal_binary.R imbalanced yeast6 Class 1 mongo
 
  # load libraries
 library(mongolite)
+library(C50)
 
  # initial variables
 args = commandArgs()
 db.name = args[6]
-db.coll_train = args[7]
-db.coll_test = args[8]
-class.name = args[9]
-bin.number = as.numeric(args[10])
+db.collection = args[7]
+class.name = args[8]
+bin.number = as.numeric(args[9])
+output = args[10]
+if (bin.number <= 0) bin.number = 1
+calg = "C5.0"
+split = c("train", "test")
 
  # open mongo connection
-conn = mongo(db.coll_test, db.name)
+collname = paste(db.collection, "_", split[2], sep="")
+conn = mongo(collname, db.name)
 testdata = conn$find()
-conn = mongo(db.coll_train, db.name)
+collname = paste(db.collection, "_", split[1], sep="")
+conn = mongo(collname, db.name)
 
  # find all class values and sizes
 class.values = sort(conn$distinct(class.name)) # "negative", "positive"
@@ -122,11 +161,10 @@ bin.positive = conn$find(query)
 
  # compute bin range
 bin.count = floor(class.sizes[1] / class.sizes[2]) # 41
+if (bin.number > bin.count) bin.number = bin.count
 limit = class.sizes[2] # 35
 skip = ((bin.number - 1) * limit) # 0, 35, 70, ...+35
-if (bin.number == bin.count) {
-	limit = class.sizes[1] - skip
-}
+if (bin.number == bin.count) limit = class.sizes[1] - skip
 
  # read collection and build bin
 query = paste('{"', class.name, '": "', class.values[1], '"}', sep="")
@@ -134,9 +172,28 @@ bin.negative = conn$find(query, skip=skip, limit=limit)
 bin = rbind(bin.negative, bin.positive)
 
  # classify
- #probs = matrix(c(0), nrow = nrow(datasetTe), ncol = length(class))
+if (calg == "C5.0") {
+	model = C5.0(x = bin[, -ncol(bin)], y = as.factor(bin[, ncol(bin)]))
+	probs = predict(model, testdata, type = "prob")
+}
+
+ # return result
+collname = paste(db.collection, "_result_", bin.number, sep="")
+filename = paste("results/", collname, sep="")
+if (output == "file") {
+	if (!dir.exists("results/")) dir.create("results/", mode = "0777")
+	write(t(probs), file=filename, ncolumns=2)
+} else {
+	if (output == "console") {
+		writeLines("RESULTS")
+		print(probs)
+	} else {
+		conn = mongo(collname, db.name)
+		if(conn$count() > 0) conn$drop()
+		conn$insert(as.data.frame(probs))
+	}
+}
 
  # close mongo connection
 rm(conn)
-
 ```
