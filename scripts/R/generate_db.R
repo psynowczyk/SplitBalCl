@@ -22,7 +22,7 @@ class.values = sort(conn$distinct(class.name)) # "negative", "positive"
 for (x in 1:length(class.values)) {
 	query = paste('{"', class.name, '": "', class.values[x], '"}', sep="")
 	data = conn$find(query)
-	size = round(nrow(data) * 0.7)	
+	size = round(nrow(data) * ratio)	
 	rand = sample(1:nrow(data), size)
 	data.train = rbind(data.train, data[rand,])
 	data.test = rbind(data.test, data[-rand,])
