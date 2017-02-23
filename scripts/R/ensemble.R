@@ -80,13 +80,13 @@ while(bin.number > 0) {
 				 # MaxDistance
 				col = (2 * (rule - 1)) + 1
 				if (ensemble.rules[rule] == "MaxDistance") {
-					if (ensemble.result[index, col] < result.temp.negative) ensemble.result[index, 1] = result.temp.negative
-					if (ensemble.result[index, (col+1)] < result.temp.positive) ensemble.result[index, 2] = result.temp.positive
+					if (ensemble.result[index, col] < result.temp.negative) ensemble.result[index, col] = result.temp.negative
+					if (ensemble.result[index, (col+1)] < result.temp.positive) ensemble.result[index, (col+1)] = result.temp.positive
 				}
 				 # SumDistance
 				if (ensemble.rules[rule] == "SumDistance") {
-					ensemble.result[index, col] = ensemble.result[index, 1] + result.temp.negative
-					ensemble.result[index, (col+1)] = ensemble.result[index, 2] + result.temp.positive
+					ensemble.result[index, col] = ensemble.result[index, col] + result.temp.negative
+					ensemble.result[index, (col+1)] = ensemble.result[index, (col+1)] + result.temp.positive
 				}
 			}
 		}
