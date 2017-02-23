@@ -11,6 +11,15 @@ Requirements:
 * openssl and Cyrus SASL
 * MongoDB
 * R + packages: rJava, mongolite, C50
+```sh
+apt-get install libsasl2-dev
+apt-get install r-base-core
+apt-get install r-cran-rjava
+```
+```r
+install.packages("mongolite")
+install.packages("C50", repos="http://R-Forge.R-project.org")
+```
 
 # Data preparation
 ### Dataset
