@@ -1,9 +1,12 @@
  # args -> [file, database, collection, class name, bin number (1...x=C1/C2), output (mongo, file, console)]
- # ex. -> $ Rscript splitbal_binary.R imbalanced yeast6 Class 1 mongo
+ # ex. -> $ Rscript scripts/R/splitbal_binary.R imbalanced yeast6 Class 1 mongo
 
  # load libraries
-library(mongolite)
-library(C50)
+library("mongolite")
+library("C50")
+
+ # Normalize
+Normalize <- function(x) (x - min(x)) / (max(x) - min(x))
 
  # initial variables
 args = commandArgs()
@@ -50,23 +53,38 @@ if (calg == "C5.0") {
 	probs = predict(model, testdata, type = "prob")
 }
 
+ # compute mean distance value (needed at ensemble process)
+bin.mean = data.frame()
+bin.mean = rbind(bin.mean, Normalize(colMeans(bin.negative[, -ncol(bin.negative)])))
+bin.mean = rbind(bin.mean, Normalize(colMeans(bin.positive[, -ncol(bin.positive)])))
+colnames(bin.mean) = 1:(ncol(bin) - 1)
+
  # return result
-collname = paste(db.collection, "_result_", bin.number, sep="")
-filename = paste("results/", collname, sep="")
+collname.result = paste(db.collection, "_result_", bin.number, sep="")
+collname.mean = paste(db.collection, "_mean_", bin.number, sep="")
+dirname = paste("results/", db.collection, "/", sep="")
 if (output == "file") {
 	if (!dir.exists("results/")) dir.create("results/", mode = "0777")
-	write(t(probs), file=filename, ncolumns=2)
+	if (!dir.exists(dirname)) dir.create(dirname, mode = "0777")
+	file.name.probs = paste(dirname, collname.result, sep="")
+	file.name.means = paste(dirname, collname.mean, sep="")
+	write(t(probs), file=file.name.probs, ncolumns=2)
+	write(as.matrix(t(bin.mean)), file=file.name.means, ncolumns=(ncol(bin) - 1))
 } else {
 	if (output == "console") {
-		writeLines("RESULTS")
+		writeLines("-----: Results :-----")
 		print(probs)
+		writeLines("-----: Means :-----")
+		print(bin.mean)
 	} else {
-		conn = mongo(collname, db.name)
+		conn = mongo(collname.result, db.name)
 		if(conn$count() > 0) conn$drop()
 		conn$insert(as.data.frame(probs))
+		conn = mongo(collname.mean, db.name)
+		if(conn$count() > 0) conn$drop()
+		conn$insert(as.data.frame(bin.mean))
 	}
 }
 
  # close mongo connection
 rm(conn)
-
