@@ -22,10 +22,11 @@ sudo apt-get update
 sudo apt-get install -y mongodb-org
 
 ```
-* R + packages: rJava, mongolite, C50
+* R + packages: rJava, mongolite, C50, ROCR
 ```sh
 apt-get install r-base-core
 apt-get install r-cran-rjava
+apt-get install r-cran-rocr
 ```
 ```r
 install.packages("mongolite")
@@ -45,6 +46,7 @@ yeast6 | 8 | 1484 | 41.4
 **Import**
 ```sh
 $ mongoimport --db imbalanced --collection yeast6 --type csv --headerline --file datasets/yeast6.csv
+
 imported 1484 documents
 ```
 
@@ -69,7 +71,7 @@ In order to measure classification accuracy a test and train subsets are require
 
 **Usage**
 ```sh
-$ Rscript generate_db.R imbalanced yeast6 Class
+$ Rscript scripts/R/generate_db.R imbalanced yeast6 Class
 ```
 
 **Arguments**
@@ -79,58 +81,13 @@ $ Rscript generate_db.R imbalanced yeast6 Class
 3. name of collection
 4. name of class
 
-**Script**
-```r
- # args -> [file, database, collection, class name]
- # ex. -> $ Rscript generate_db.R imbalanced yeast6 Class
-
- # load libraries
-library(mongolite)
-
- # initial variables
-args = commandArgs()
-db.name = args[6]
-db.collection = args[7]
-class.name = args[8]
-ratio = 0.7
-split = c("train", "test")
-data.train = data.frame()
-data.test = data.frame()
-
- # open mongo connection
-conn = mongo(db.collection, db.name)
-
- # get test and train subsets
-class.values = sort(conn$distinct(class.name)) # "negative", "positive"
-for (x in 1:length(class.values)) {
-	query = paste('{"', class.name, '": "', class.values[x], '"}', sep="")
-	data = conn$find(query)
-	size = round(nrow(data) * 0.7)	
-	rand = sample(1:nrow(data), size)
-	data.train = rbind(data.train, data[rand,])
-	data.test = rbind(data.test, data[-rand,])
-}
-
- # insert test and train subsets into database
-for (x in 1:length(split)) {
-	collname = paste(db.collection, "_", split[x], sep="")
-	conn = mongo(collname, db.name)
-	if(conn$count() > 0) conn$drop()
-	data = eval(as.name(paste("data.", split[x], sep="")))
-	conn$insert(data)
-}
-
- # close mongo connection
-rm(conn)
-```
-
 # Split balancing
 **Description**<br>
 A split balancing method implementation [R script](scripts/R/splitbal_binary.R).<br>
 
 **Usage**
 ```sh
-$ Rscript splitbal_binary.R imbalanced yeast6 Class 1 mongo
+$ Rscript scripts/R/splitbal_binary.R imbalanced yeast6 Class 1 mongo
 ```
 
 **Arguments**
@@ -141,81 +98,58 @@ $ Rscript splitbal_binary.R imbalanced yeast6 Class 1 mongo
 4. name of class
 5. bin number [1...x=C1/C2]
 6. output type
-  * mongo - inserts result data into database as new collection: collection_result_bin
-  * file - writes result data into file: results/collection_result_bin
-  * console - prints result data into console
+  * mongo - inserts data into database: collection_result_bin & collection_mean_bin
+  * file - writes data into file: results/collection/collection_result_bin & collection_mean_bin
+  * console - prints data into console
 
-**Script**
-```r
- # args -> [file, database, collection, class name, bin number (1...x=C1/C2), output (mongo, file, console)]
- # ex. -> $ Rscript splitbal_binary.R imbalanced yeast6 Class 1 mongo
+# Results ensemble
+**Description**<br>
+Once all predictions are delivered two ensemble methods (MaxDistance, SumDistance) are employed to combine them [R script](scripts/R/ensemble.R).<br>
 
- # load libraries
-library(mongolite)
-library(C50)
+**Usage**
+```sh
+$ Rscript scripts/R/ensemble.R imbalanced yeast6 mongo mongo
+```
 
- # initial variables
-args = commandArgs()
-db.name = args[6]
-db.collection = args[7]
-class.name = args[8]
-bin.number = as.numeric(args[9])
-output = args[10]
-if (bin.number <= 0) bin.number = 1
-calg = "C5.0"
-split = c("train", "test")
+**Arguments**
 
- # open mongo connection
-collname = paste(db.collection, "_", split[2], sep="")
-conn = mongo(collname, db.name)
-testdata = conn$find()
-collname = paste(db.collection, "_", split[1], sep="")
-conn = mongo(collname, db.name)
+1. R script location
+2. name of database
+3. name of collection / file prefix
+4. input type
+  * mongo - read results from database
+  * file - read results from files
+5. output type
+  * mongo - inserts ensemble data into database as new collection: collection_ensemble
+  * file - writes ensemble data into file: results/collection/collection_ensemble
+  * console - prints ensemble data into console
 
- # find all class values and sizes
-class.values = sort(conn$distinct(class.name)) # "negative", "positive"
-class.sizes = c(rep(0, length(class.values)))  # 1449, 35
-for (x in 1:length(class.values)) {
-	query = paste('{"', class.name, '": "', class.values[x], '"}', sep="")
-	class.sizes[x] = conn$count(query)
-}
-bin.positive = conn$find(query)
+**Results**
 
- # compute bin range
-bin.count = floor(class.sizes[1] / class.sizes[2]) # 41
-if (bin.number > bin.count) bin.number = bin.count
-limit = class.sizes[2] # 35
-skip = ((bin.number - 1) * limit) # 0, 35, 70, ...+35
-if (bin.number == bin.count) limit = class.sizes[1] - skip
+1. Predictions ensabmle
+  * data type: a matrix of predictions after ensabmle process
+  * schema: [P1R1 P2R1 ... P1Rn P2Rn], P - probability, R - ensemble rule
+  * data sample:
+```sh
+$ head results/yeast6/yeast6_ensemble 
 
- # read collection and build bin
-query = paste('{"', class.name, '": "', class.values[1], '"}', sep="")
-bin.negative = conn$find(query, skip=skip, limit=limit)
-bin = rbind(bin.negative, bin.positive)
+0.4129194 0.07327571 0.8249341 0.1465514
+0.3846482 0.06583408 0.7683319 0.1316682
+0.4235479 0.07236825 0.8442176 0.1447365
+0.4074153 0.06836955 0.8114674 0.1367391
+0.4171966 0.07438938 0.8339174 0.1487788
+0.4119431 0.07359854 0.8231136 0.1471971
+0.4222198 0.07519196 0.8427968 0.1503839
+0.4121872 0.07314196 0.821909 0.1462839
+0.4001976 0.06929426 0.7992559 0.1385885
+0.4164431 0.07694662 0.8323568 0.1538932
 
- # classify
-if (calg == "C5.0") {
-	model = C5.0(x = bin[, -ncol(bin)], y = as.factor(bin[, ncol(bin)]))
-	probs = predict(model, testdata, type = "prob")
-}
-
- # return result
-collname = paste(db.collection, "_result_", bin.number, sep="")
-filename = paste("results/", collname, sep="")
-if (output == "file") {
-	if (!dir.exists("results/")) dir.create("results/", mode = "0777")
-	write(t(probs), file=filename, ncolumns=2)
-} else {
-	if (output == "console") {
-		writeLines("RESULTS")
-		print(probs)
-	} else {
-		conn = mongo(collname, db.name)
-		if(conn$count() > 0) conn$drop()
-		conn$insert(as.data.frame(probs))
-	}
-}
-
- # close mongo connection
-rm(conn)
+```
+2. Ensemble rules performance
+  * data type: area under curve (AUC)
+  * schema: [AUC-R1 ... AUC-Rn], R - ensemble rule
+  * data sample:
+```sh
+"MaxDistance" "SumDistance"
+0.931243469174505 0.931452455590388
 ```
