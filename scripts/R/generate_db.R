@@ -2,7 +2,7 @@
  # ex. -> $ Rscript generate_db.R imbalanced yeast6 Class
 
  # load libraries
-library(mongolite)
+library("mongolite")
 
  # initial variables
 args = commandArgs()
