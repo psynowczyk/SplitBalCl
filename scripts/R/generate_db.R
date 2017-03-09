@@ -14,6 +14,8 @@ split = c("train", "test")
 data.train = data.frame()
 data.test = data.frame()
 
+Normalize <- function(x) (x - min(x)) / (max(x) - min(x))
+
  # open mongo connection
 conn = mongo(db.collection, db.name)
 
@@ -22,6 +24,19 @@ class.values = sort(conn$distinct(class.name)) # "negative", "positive"
 for (x in 1:length(class.values)) {
 	query = paste('{"', class.name, '": "', class.values[x], '"}', sep="")
 	data = conn$find(query)
+
+	 # remove rows with empty values
+	data[data[,] == ""] = NA
+	data = data[complete.cases(data),]
+
+	 # convert non-integer columns to int
+	columns.nonint = sapply(data[,-ncol(data)], is.character)
+	columns.nonint[class.name] = FALSE
+	if (length(columns.nonint[columns.nonint[] == TRUE]) > 0) {
+		data[columns.nonint] = lapply(data[columns.nonint], function(x) as.numeric(as.factor(x)))
+		data[columns.nonint] = Normalize(data[columns.nonint])
+	}
+
 	size = round(nrow(data) * ratio)	
 	rand = sample(1:nrow(data), size)
 	data.train = rbind(data.train, data[rand,])
