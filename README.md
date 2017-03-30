@@ -115,6 +115,7 @@ database collection: result_{#bin}
 # Results ensemble
 **Description**<br>
 Once predictions are delivered ensemble method can be applied (max, min, sum, pro) [R script](scripts/R/ensemble.R).<br>
+![ensemble graph](img/ensemble.jpg)
 
 **Usage**
 ```sh
