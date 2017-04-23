@@ -1,5 +1,5 @@
-# args -> [file, database]
- # ex. -> $ Rscript scripts/R/ensemble.R yeast6
+# args -> [file, database, source]
+ # ex. -> $ Rscript scripts/R/ensemble.R yeast6 ens_1
 
  # load libraries
 library("mongolite")
@@ -8,9 +8,10 @@ library("ROCR")
  # initial variables
 args = commandArgs()
 db.name = args[6];
+doc.name = args[7];
 conn = mongo(paste(db.name, "_test", sep=""), db.name)
 testdata = conn$find()
-conn = mongo("ens_1", db.name)
+conn = mongo(doc.name, db.name)
 ens = conn$find()
 
  # Confidence

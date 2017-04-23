@@ -5,6 +5,8 @@ A script for parallel classification of vast imbalanced datasets using split bal
 - [Environment](#environment)
 - [Data preparation](#data-preparation)
 - [Split balancing](#split-balancing)
+- [Results ensemble](#results-ensemble)
+- [Classification performance](#classification-performance)
 
 # Environment
 Requirements:
@@ -154,13 +156,16 @@ In order to measure classification performance following [R script](scripts/R/au
 
 **Usage**
 ```sh
-$ Rscript scripts/R/auc.R yeast6
+$ Rscript scripts/R/auc.R yeast6 ens_1
 ```
 
 **Arguments**
 
 1. R script location
 2. name of database
+3. name of collection containing prediction vector
+  * SplitBal: ens_1
+  * EDBC: edbc
 
 **Output**
 
@@ -170,4 +175,37 @@ database collection (new or insertion): auc
 ```js
 > db.auc.findOne();
 { "_id" : ObjectId("58dd14f8bfdeee19321f9761"), "auc" : 0.894879833 }
+```
+
+# EDBC method
+**Description**<br>
+EDBC method implementation for comparison [R script](scripts/R/edbc.R)<br>
+
+entropy package required:
+```sh
+install.packages("entropy")
+```
+
+**Usage**
+```sh
+$ Rscript scripts/R/edbc.R yeast6
+```
+
+**Arguments**
+
+1. R script location
+2. name of database
+
+**Output**
+
+database collection: edbc
+
+**Sample**
+```js
+> db.edbc.findOne();
+{
+	"_id" : ObjectId("58fce296bfdeee262c6099c1"),
+	"negative" : 0.997922873,
+	"positive" : 0.002077127
+}
 ```
