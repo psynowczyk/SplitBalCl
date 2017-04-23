@@ -7,6 +7,7 @@ A script for parallel classification of vast imbalanced datasets using split bal
 - [Split balancing](#split-balancing)
 - [Results ensemble](#results-ensemble)
 - [Classification performance](#classification-performance)
+- [EDBC method](#edbc-method)
 
 # Environment
 Requirements:
@@ -131,6 +132,7 @@ $ Rscript scripts/R/ensemble.R yeast6 1 2 sum
 3. predictions subset number
 4. predictions subset number
 5. ensemble strategy
+
   * max: maximum classification probability
   * min: minimum classification probability
   * sum: summation of classification probability
@@ -164,6 +166,7 @@ $ Rscript scripts/R/auc.R yeast6 ens_1
 1. R script location
 2. name of database
 3. name of collection containing prediction vector
+
   * SplitBal: ens_1
   * EDBC: edbc
 
