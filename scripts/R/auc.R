@@ -29,7 +29,13 @@ Conf <- function(data, prob) {
 conf = Conf(testdata, ens)
 pred = prediction(conf[, 1], conf[, 2])
 perf = performance(pred, "auc")
-auc = as.numeric(slot(perf, "y.values")[1])
+
+auc = matrix(nrow = 1, ncol = 2)
+colnames(auc) = c("Method", "AUC")
+if (doc.name == "ens_1") doc.name = "SplitBal"
+if (doc.name == "edbc") doc.name = "EDBC"
+auc[1, 1] = doc.name
+auc[1, 2] = as.numeric(slot(perf, "y.values")[1])
 
  # return result
 conn = mongo("auc", db.name)
