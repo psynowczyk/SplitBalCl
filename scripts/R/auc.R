@@ -1,5 +1,5 @@
 # args -> [file, database, source]
- # ex. -> $ Rscript scripts/R/ensemble.R yeast6 ens_1
+ # ex. -> $ Rscript scripts/R/auc.R yeast6 ens_1
 
  # load libraries
 library("mongolite")

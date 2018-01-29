@@ -1,3 +1,6 @@
+# args -> [file, database]
+# ex. -> $ Rscript scripts/R/edbc.R yeast6
+
 # Load libraries
 library("mongolite")
 library("entropy")

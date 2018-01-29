@@ -1,47 +1,10 @@
 # args -> [file, database]
-# ex. -> $ Rscript scripts/R/edbc_bal.R abalone19
+# ex. -> $ Rscript scripts/R/dbc.R yeast6
 
 # Load libraries
 library("mongolite")
 library("entropy")
 library("C50")
-
-# -- FEATURE SELECTION -- #
-
-# Discrete probability distribution
-DPD <- function(v, ...) {
-   (count <- table(v, ..., dnn=NULL)) / sum(count)
-}
-
-# Mutual information
-MI <- function(v1, v2) {
-   p = DPD(v1, v2)
-   p1 = rowSums(p)
-   p2 = colSums(p)
-   sum(p*log2(p/(p1%o%p2)), na.rm=TRUE)
-}
-
-# Symmetric uncertainty
-SU <- function(v1, v2) {
-   2 * MI(v1, v2) / (entropy.ChaoShen(v1) + entropy.ChaoShen(v2))
-}
-
-# Select relevant features
-SF <- function(data) {
-   threshold = 0
-   su = c()
-   for (x in 1:(ncol(data)-1)) {
-      su[x] = SU(data[, x], as.numeric(as.factor(data[, ncol(data)])))
-   }
-   su = round(su, 4)
-   su[length(su) + 1] = threshold + 0.1
-   return(which(su > threshold))
-}
-
-# Irrelevant feature removal
-IFR <- function(data, features) {
-   return(data[, features])
-}
 
 # -- PROTOTYPE SELECTION -- #
 
@@ -49,7 +12,7 @@ Neighbors <- function(dists, eIdx, k) {
    as.integer(names(sort(dists[eIdx, -eIdx])[1:k]))
 }
 
-# Jarvis-Patrick clustering
+# Jarvis-Patric clustering
 JPC <- function(data, class.name, class.value) {
    result = data[0,]
    sub = subset(data, data[[class.name]] == class.value)
@@ -60,8 +23,8 @@ JPC <- function(data, class.name, class.value) {
    # number of nearest neighbors
    k = floor(ratio * opposite.count)
 
-   # minimal number of shared nearest neighbors
-   threshold = floor(k * 0.20)
+   # minimal number of shared nearest neighbors, 10% of k
+   threshold = floor(k * 0.1)
 
    # number of clusters ~ prototypes
    clusters.count = k - threshold
@@ -129,18 +92,6 @@ DT <- function(data, prototypes) {
    return(result)
 }
 
-Group <- function(data, groups) {
-   list = split(data[, -ncol(data)], as.factor(1:groups))
-   result = data.frame()
-   for (x in 1:length(list)) {
-      group = list[[x]]
-      result = rbind(result, colMeans(group))
-   }
-   result = cbind(result, rep(data[1, ncol(data)], nrow(result)))
-   colnames(result) = colnames(data)
-   return(result)
-}
-
 # -- TESTS -- #
 
 Tests <- function(db.name) {
@@ -158,47 +109,23 @@ Tests <- function(db.name) {
    conn = mongo(collname, db.name)
    traindata = conn$find()
 
-   # Irrelevant feature removal: remove features below relevant threshold
-   features = SF(traindata)
-   cat("~ Irrelevant features (", ncol(traindata) - length(features), ") selected: ", sep = "")
-   cat(colnames(traindata[, -features]), sep = ", ")
-   cat("\n~ Relevant features (", length(features), ") are: ", sep = "")
-   cat(colnames(traindata[, features]), sep = ", ")
-   datasetR = IFR(traindata, features)
-   writeLines("\n~ Train data reduced")
-
    # Prototype selection: Jarvis-Patric clustering
-   datasetP = JPC(datasetR, class.name, class.values[1])
-   datasetP = rbind(datasetP, JPC(datasetR, class.name, class.values[2]))
-   #datasetP = rbind(datasetP, subset(datasetR, datasetR[[class.name]] == class.values[2]))
+   datasetP = JPC(traindata, class.name, class.values[1])
+   datasetP = rbind(datasetP, JPC(traindata, class.name, class.values[2]))
    writeLines("~ Prototypes selected")
 
    # Dissimilarity transformation
-   datasetD = DT(datasetR, datasetP)
+   datasetD = DT(traindata, datasetP)
    writeLines("~ Dissimilarity matrix obtained")
-   
-   # Group balance
-   datasetD = rbind(
-      Group(
-         subset(datasetD, datasetD[, ncol(datasetD)] == class.values[1]),
-         nrow(subset(datasetR, datasetR[[class.name]] == class.values[2]))
-      ),
-      subset(datasetD, datasetD[, ncol(datasetD)] == class.values[2])
-   )
-   
-   # New data reduction
-   datasetRn = IFR(testdata, features)
-   writeLines("~ Test data reduced")
 
    # New data dissimilarity transformation
-   datasetDt = DT(datasetRn, datasetP)
+   datasetDt = DT(testdata, datasetP)
    writeLines("~ Test data dissimilarity matrix obtained")
 
    # Build model & get probabilities
-   model = C5.0(as.factor(datasetD[, ncol(datasetD)]) ~ ., data = datasetD[, -ncol(datasetD)])
+   model = C5.0(x = datasetD[, -ncol(datasetD)], y = as.factor(datasetD[, ncol(datasetD)]))
    writeLines("~ Model built")
-
-   probs = predict(model, datasetDt[, -ncol(datasetDt)], type = "prob")
+   probs = predict(model, datasetDt, type = "prob")
    writeLines("~ Predictions obtained")
    
    # Insert results into database

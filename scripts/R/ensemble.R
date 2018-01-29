@@ -21,6 +21,7 @@ for (index in 1:(length(bin.number))) {
 	 # check if subset exists, else die
 	stopifnot (conn$count() > 0)
 	bin = conn$find()
+	print(bin)
 	assign(bin.name, bin)
 }
 rm(bin)
